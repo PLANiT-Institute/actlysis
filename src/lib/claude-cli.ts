@@ -1,5 +1,6 @@
 import { spawn } from "child_process";
 import { DEFAULT_SECTION_PROMPTS, BLOCK_SCHEMA } from "./constants";
+import { parseBlocks } from "./parse-blocks";
 import type { AnalyzeRequest, SectionConfig, Block } from "./types";
 
 function buildSectionPrompt(req: AnalyzeRequest, section: SectionConfig): string {
@@ -79,42 +80,7 @@ function runClaudeForSection(req: AnalyzeRequest, section: SectionConfig): Promi
         return;
       }
 
-      const cleaned = buffer.replace(/---END---\s*$/m, "").trim();
-      const lines = cleaned.split("\n");
-
-      let blocks: Block[] = [];
-      let mdStart = 0;
-
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i].trim();
-        if (line.startsWith("{") && line.includes('"blocks"')) {
-          try {
-            const parsed = JSON.parse(line) as { blocks?: Block[] };
-            blocks = parsed.blocks ?? [];
-            mdStart = i + 1;
-            break;
-          } catch {
-            for (let j = i + 1; j < Math.min(i + 50, lines.length); j++) {
-              try {
-                const candidate = lines.slice(i, j + 1).join("\n");
-                const parsed = JSON.parse(candidate) as { blocks?: Block[] };
-                blocks = parsed.blocks ?? [];
-                mdStart = j + 1;
-                i = j;
-                break;
-              } catch { /* continue */ }
-            }
-            if (blocks.length > 0) break;
-          }
-        }
-      }
-
-      const markdownContent = lines.slice(mdStart).join("\n").trim();
-      if (markdownContent) {
-        blocks = [...blocks, { type: "markdown", content: markdownContent }];
-      }
-
-      resolve({ sectionId: section.id, blocks });
+      resolve({ sectionId: section.id, blocks: parseBlocks(buffer) });
     });
 
     proc.on("error", (err) => reject(err));

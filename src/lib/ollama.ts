@@ -1,5 +1,6 @@
 import type { AnalyzeRequest, SectionConfig, Block } from "./types";
 import { DEFAULT_SECTION_PROMPTS, BLOCK_SCHEMA } from "./constants";
+import { parseBlocks } from "./parse-blocks";
 
 const OLLAMA_BASE = process.env.OLLAMA_BASE_URL ?? "http://localhost:11434";
 
@@ -63,46 +64,6 @@ ${sectionPrompt}
 이제 위 형식에 따라 "${section.label}" 섹션을 작성하세요. 첫 줄에 {"blocks":[...]} JSON을 출력하고, 이어서 마크다운 본문을 쓰고, 마지막에 ---END--- 로 종료하세요.`;
 }
 
-function parseBlocks(rawOutput: string): Block[] {
-  const cleaned = rawOutput.replace(/---END---\s*$/m, "").trim();
-  const lines = cleaned.split("\n");
-
-  let blocks: Block[] = [];
-  let mdStart = 0;
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim();
-    if (line.startsWith("{") && line.includes('"blocks"')) {
-      try {
-        const parsed = JSON.parse(line) as { blocks?: Block[] };
-        blocks = parsed.blocks ?? [];
-        mdStart = i + 1;
-        break;
-      } catch {
-        for (let j = i + 1; j < Math.min(i + 50, lines.length); j++) {
-          try {
-            const candidate = lines.slice(i, j + 1).join("\n");
-            const parsed = JSON.parse(candidate) as { blocks?: Block[] };
-            blocks = parsed.blocks ?? [];
-            mdStart = j + 1;
-            i = j;
-            break;
-          } catch {
-            /* continue */
-          }
-        }
-        if (blocks.length > 0) break;
-      }
-    }
-  }
-
-  const markdownContent = lines.slice(mdStart).join("\n").trim();
-  if (markdownContent) {
-    blocks = [...blocks, { type: "markdown", content: markdownContent }];
-  }
-
-  return blocks;
-}
 
 interface SectionResult {
   sectionId: string;
