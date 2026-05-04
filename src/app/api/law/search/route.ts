@@ -10,10 +10,9 @@ export async function GET(req: NextRequest) {
 
   const page = Number(searchParams.get("page") ?? "1");
   const display = Number(searchParams.get("display") ?? "20");
-  const sort = searchParams.get("sort") ?? "lawNm";
 
   try {
-    const result = await searchLaws(q, page, display, sort);
+    const result = await searchLaws(q, page, display);
     return NextResponse.json(result);
   } catch (err) {
     if (err instanceof LawApiAuthError) {

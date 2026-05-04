@@ -66,15 +66,13 @@ async function lawRequest(
 export async function searchLaws(
   query: string,
   page = 1,
-  display = 20,
-  sort = "lawNm"
+  display = 20
 ): Promise<{ total: number; results: LawSearchResult[] }> {
   const data = await lawRequest("lawSearch.do", {
     target: "law",
     query,
     display,
     page,
-    sort,
   });
 
   const root = (data?.LawSearch ?? {}) as Record<string, unknown>;
