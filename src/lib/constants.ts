@@ -2,6 +2,14 @@ import type { SectionConfig } from "./types";
 
 export const DEFAULT_OLLAMA_MODEL = "qwen2.5:3b";
 
+export const CLAUDE_MODELS = [
+  { id: "claude-opus-4-7",           label: "Claude Opus 4"   },
+  { id: "claude-sonnet-4-6",         label: "Claude Sonnet 4" },
+  { id: "claude-haiku-4-5-20251001", label: "Claude Haiku 4"  },
+] as const;
+
+export const DEFAULT_CLAUDE_MODEL = "claude-sonnet-4-6";
+
 export const LAW_BASE_URL = "http://www.law.go.kr/DRF";
 
 export const DEFAULT_SECTIONS: SectionConfig[] = [

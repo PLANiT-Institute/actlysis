@@ -111,6 +111,7 @@ export interface AnalyzeRequest {
   lawContent: LawContent;
   precedents: PrecedentResult[];
   sections: SectionConfig[];
+  provider: "ollama" | "claude-code";
   model: string;
 }
 

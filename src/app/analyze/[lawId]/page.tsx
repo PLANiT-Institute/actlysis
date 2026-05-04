@@ -8,12 +8,14 @@ import { Badge } from "@/components/ui/badge";
 import { Building2, Calendar, FileText, ArrowLeft, Bot } from "lucide-react";
 import Link from "next/link";
 import { formatDate } from "@/lib/utils";
-import { DEFAULT_OLLAMA_MODEL } from "@/lib/constants";
+import { DEFAULT_OLLAMA_MODEL, DEFAULT_CLAUDE_MODEL, CLAUDE_MODELS } from "@/lib/constants";
 import type { LawContent, SectionConfig } from "@/lib/types";
 
 interface AnalyzePageProps {
   params: { lawId: string };
 }
+
+type Provider = "ollama" | "claude-code";
 
 export default function AnalyzePage({ params }: AnalyzePageProps) {
   const { lawId } = params;
@@ -22,9 +24,14 @@ export default function AnalyzePage({ params }: AnalyzePageProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
+
+  const [provider, setProvider] = useState<Provider>("ollama");
   const [ollamaModels, setOllamaModels] = useState<string[]>([]);
-  const [selectedModel, setSelectedModel] = useState(DEFAULT_OLLAMA_MODEL);
+  const [ollamaModel, setOllamaModel] = useState(DEFAULT_OLLAMA_MODEL);
+  const [claudeModel, setClaudeModel] = useState(DEFAULT_CLAUDE_MODEL);
   const [ollamaError, setOllamaError] = useState("");
+
+  const selectedModel = provider === "claude-code" ? claudeModel : ollamaModel;
 
   useEffect(() => {
     fetch(`/api/law/content?id=${lawId}`)
@@ -44,8 +51,8 @@ export default function AnalyzePage({ params }: AnalyzePageProps) {
         } else {
           const names = (data.models ?? []).map((m) => m.name);
           setOllamaModels(names);
-          if (names.length > 0 && !names.includes(selectedModel)) {
-            setSelectedModel(names[0]);
+          if (names.length > 0 && !names.includes(DEFAULT_OLLAMA_MODEL)) {
+            setOllamaModel(names[0]);
           }
         }
       })
@@ -57,24 +64,22 @@ export default function AnalyzePage({ params }: AnalyzePageProps) {
     setIsGenerating(true);
 
     try {
-      // Fetch precedents for this law
       const precRes = await fetch(
         `/api/law/precedents?q=${encodeURIComponent(lawContent.name)}&display=10`
       );
       const precData = await precRes.json();
       const precedents = precData.results ?? [];
 
-      // Store config in sessionStorage for the report page
       const analyzeRequest = {
         lawId,
         lawName: lawContent.name,
         lawContent,
         precedents,
         sections,
+        provider,
         model: selectedModel,
       };
       sessionStorage.setItem("analyzeRequest", JSON.stringify(analyzeRequest));
-
       router.push(`/report/${lawId}`);
     } catch {
       setIsGenerating(false);
@@ -146,33 +151,75 @@ export default function AnalyzePage({ params }: AnalyzePageProps) {
           </div>
         </div>
 
-        {/* Ollama Model Selector */}
-        <div className="rounded-xl border border-slate-200 bg-white p-6">
-          <div className="flex items-center gap-2 mb-3">
+        {/* AI Provider + Model Selector */}
+        <div className="rounded-xl border border-slate-200 bg-white p-6 space-y-4">
+          <div className="flex items-center gap-2">
             <Bot className="h-5 w-5 text-blue-600" />
-            <h2 className="font-semibold text-slate-800">AI 모델 선택</h2>
+            <h2 className="font-semibold text-slate-800">AI 설정</h2>
           </div>
-          {ollamaError ? (
-            <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-              {ollamaError} — Ollama가 실행 중인지 확인하세요 (<code>ollama serve</code>)
-            </div>
-          ) : ollamaModels.length === 0 ? (
-            <p className="text-sm text-slate-400">모델 목록 불러오는 중...</p>
+
+          {/* Provider tabs */}
+          <div className="flex gap-2">
+            {(["ollama", "claude-code"] as Provider[]).map((p) => (
+              <button
+                key={p}
+                onClick={() => setProvider(p)}
+                className={`px-4 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+                  provider === p
+                    ? "bg-slate-800 text-white border-slate-800"
+                    : "border-slate-200 text-slate-600 hover:border-slate-400"
+                }`}
+              >
+                {p === "ollama" ? "Ollama (로컬)" : "Claude Code"}
+              </button>
+            ))}
+          </div>
+
+          {/* Model picker */}
+          {provider === "ollama" ? (
+            ollamaError ? (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                {ollamaError} — Ollama가 실행 중인지 확인하세요 (<code>ollama serve</code>)
+              </div>
+            ) : ollamaModels.length === 0 ? (
+              <p className="text-sm text-slate-400">모델 목록 불러오는 중...</p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {ollamaModels.map((m) => (
+                  <button
+                    key={m}
+                    onClick={() => setOllamaModel(m)}
+                    className={`rounded-full px-3 py-1 text-sm border transition-colors ${
+                      ollamaModel === m
+                        ? "bg-blue-600 text-white border-blue-600"
+                        : "border-slate-200 text-slate-600 hover:border-blue-300 hover:text-blue-600"
+                    }`}
+                  >
+                    {m}
+                  </button>
+                ))}
+              </div>
+            )
           ) : (
-            <div className="flex flex-wrap gap-2">
-              {ollamaModels.map((m) => (
-                <button
-                  key={m}
-                  onClick={() => setSelectedModel(m)}
-                  className={`rounded-full px-3 py-1 text-sm border transition-colors ${
-                    selectedModel === m
-                      ? "bg-blue-600 text-white border-blue-600"
-                      : "border-slate-200 text-slate-600 hover:border-blue-300 hover:text-blue-600"
-                  }`}
-                >
-                  {m}
-                </button>
-              ))}
+            <div className="space-y-2">
+              <div className="flex flex-wrap gap-2">
+                {CLAUDE_MODELS.map((m) => (
+                  <button
+                    key={m.id}
+                    onClick={() => setClaudeModel(m.id)}
+                    className={`rounded-full px-3 py-1 text-sm border transition-colors ${
+                      claudeModel === m.id
+                        ? "bg-blue-600 text-white border-blue-600"
+                        : "border-slate-200 text-slate-600 hover:border-blue-300 hover:text-blue-600"
+                    }`}
+                  >
+                    {m.label}
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-slate-400">
+                Claude Code CLI (<code>claude</code>)가 로그인되어 있어야 합니다.
+              </p>
             </div>
           )}
         </div>
