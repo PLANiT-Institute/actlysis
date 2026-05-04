@@ -111,6 +111,7 @@ export interface AnalyzeRequest {
   lawContent: LawContent;
   precedents: PrecedentResult[];
   sections: SectionConfig[];
+  model: string;
 }
 
 export interface SSEEvent {

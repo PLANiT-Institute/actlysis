@@ -5,9 +5,10 @@ import { useRouter } from "next/navigation";
 import { Header } from "@/components/layout/Header";
 import { SectionConfigPanel } from "@/components/analyze/SectionConfigPanel";
 import { Badge } from "@/components/ui/badge";
-import { Building2, Calendar, FileText, ArrowLeft } from "lucide-react";
+import { Building2, Calendar, FileText, ArrowLeft, Bot } from "lucide-react";
 import Link from "next/link";
 import { formatDate } from "@/lib/utils";
+import { DEFAULT_OLLAMA_MODEL } from "@/lib/constants";
 import type { LawContent, SectionConfig } from "@/lib/types";
 
 interface AnalyzePageProps {
@@ -21,17 +22,35 @@ export default function AnalyzePage({ params }: AnalyzePageProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [ollamaModels, setOllamaModels] = useState<string[]>([]);
+  const [selectedModel, setSelectedModel] = useState(DEFAULT_OLLAMA_MODEL);
+  const [ollamaError, setOllamaError] = useState("");
 
   useEffect(() => {
     fetch(`/api/law/content?id=${lawId}`)
       .then((r) => r.json())
-      .then((data) => {
+      .then((data: { error?: string } & LawContent) => {
         if (data.error) setError(data.error);
         else setLawContent(data);
       })
       .catch(() => setError("법령 조회에 실패했습니다."))
       .finally(() => setLoading(false));
-  }, [lawId]);
+
+    fetch("/api/ollama/models")
+      .then((r) => r.json())
+      .then((data: { models?: { name: string }[]; error?: string }) => {
+        if (data.error) {
+          setOllamaError(data.error);
+        } else {
+          const names = (data.models ?? []).map((m) => m.name);
+          setOllamaModels(names);
+          if (names.length > 0 && !names.includes(selectedModel)) {
+            setSelectedModel(names[0]);
+          }
+        }
+      })
+      .catch(() => setOllamaError("Ollama에 연결할 수 없습니다."));
+  }, [lawId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleGenerate(sections: SectionConfig[]) {
     if (!lawContent) return;
@@ -52,6 +71,7 @@ export default function AnalyzePage({ params }: AnalyzePageProps) {
         lawContent,
         precedents,
         sections,
+        model: selectedModel,
       };
       sessionStorage.setItem("analyzeRequest", JSON.stringify(analyzeRequest));
 
@@ -124,6 +144,37 @@ export default function AnalyzePage({ params }: AnalyzePageProps) {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Ollama Model Selector */}
+        <div className="rounded-xl border border-slate-200 bg-white p-6">
+          <div className="flex items-center gap-2 mb-3">
+            <Bot className="h-5 w-5 text-blue-600" />
+            <h2 className="font-semibold text-slate-800">AI 모델 선택</h2>
+          </div>
+          {ollamaError ? (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              {ollamaError} — Ollama가 실행 중인지 확인하세요 (<code>ollama serve</code>)
+            </div>
+          ) : ollamaModels.length === 0 ? (
+            <p className="text-sm text-slate-400">모델 목록 불러오는 중...</p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {ollamaModels.map((m) => (
+                <button
+                  key={m}
+                  onClick={() => setSelectedModel(m)}
+                  className={`rounded-full px-3 py-1 text-sm border transition-colors ${
+                    selectedModel === m
+                      ? "bg-blue-600 text-white border-blue-600"
+                      : "border-slate-200 text-slate-600 hover:border-blue-300 hover:text-blue-600"
+                  }`}
+                >
+                  {m}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Section Config */}

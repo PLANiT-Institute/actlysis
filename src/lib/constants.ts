@@ -1,6 +1,6 @@
 import type { SectionConfig } from "./types";
 
-export const MODEL_ID = "claude-sonnet-4-6";
+export const DEFAULT_OLLAMA_MODEL = "qwen2.5:3b";
 
 export const LAW_BASE_URL = "http://www.law.go.kr/DRF";
 

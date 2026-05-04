@@ -33,12 +33,11 @@ if [ -z "$LAW_OC_KEY" ]; then
   set -a; source .env.local; set +a
 fi
 
-# claude CLI 확인
-if ! command -v claude &>/dev/null; then
-  echo "⚠️  Claude Code CLI가 설치되어 있지 않습니다."
-  echo "   https://claude.ai/download 에서 Claude Code를 설치하세요."
-  read -p "Enter 키를 눌러 종료..."
-  exit 1
+# Ollama 확인
+if ! curl -s http://localhost:11434/api/tags &>/dev/null; then
+  echo "🤖 Ollama를 시작합니다..."
+  ollama serve &>/dev/null &
+  sleep 2
 fi
 
 # node_modules 확인 및 설치

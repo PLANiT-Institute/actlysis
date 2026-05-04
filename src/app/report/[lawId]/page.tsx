@@ -17,8 +17,7 @@ export default function ReportPage({ params }: ReportPageProps) {
   const { lawId } = params;
   const router = useRouter();
   const [sections, setSections] = useState<AnalysisSection[]>([]);
-  const [liveText, setLiveText] = useState("");
-  const [currentSection, setCurrentSection] = useState("");
+  const [pendingSections, setPendingSections] = useState<{ id: string; label: string }[]>([]);
   const [done, setDone] = useState(false);
   const [error, setError] = useState("");
   const [lawName, setLawName] = useState("");
@@ -74,28 +73,39 @@ export default function ReportPage({ params }: ReportPageProps) {
               const sectionConfig = req.sections.find(
                 (s) => s.id === event.sectionId
               );
-              setCurrentSection(sectionConfig?.label ?? event.sectionId ?? "");
-              setLiveText("");
-            } else if (event.type === "chunk") {
-              setLiveText((prev) => prev + (event.text ?? ""));
+              setPendingSections((prev) => [
+                ...prev,
+                {
+                  id: event.sectionId!,
+                  label: sectionConfig?.label ?? event.sectionId!,
+                },
+              ]);
             } else if (event.type === "section_end" && event.sectionId) {
               const sectionConfig = req.sections.find(
                 (s) => s.id === event.sectionId
               );
-              setSections((prev) => [
-                ...prev,
-                {
-                  sectionId: event.sectionId!,
-                  label: sectionConfig?.label ?? event.sectionId!,
-                  blocks: event.blocks ?? [],
-                },
-              ]);
-              setLiveText("");
-              setCurrentSection("");
+              const sectionOrder = sectionConfig?.order ?? 0;
+              setSections((prev) => {
+                const next = [
+                  ...prev,
+                  {
+                    sectionId: event.sectionId!,
+                    label: sectionConfig?.label ?? event.sectionId!,
+                    blocks: event.blocks ?? [],
+                  },
+                ];
+                // sort by configured order
+                return next.sort((a, b) => {
+                  const oa = req.sections.find((s) => s.id === a.sectionId)?.order ?? 0;
+                  const ob = req.sections.find((s) => s.id === b.sectionId)?.order ?? 0;
+                  return oa - ob;
+                });
+              });
+              void sectionOrder;
+              setPendingSections((prev) => prev.filter((p) => p.id !== event.sectionId));
             } else if (event.type === "done") {
               setDone(true);
-              setLiveText("");
-              setCurrentSection("");
+              setPendingSections([]);
               sessionStorage.removeItem("analyzeRequest");
             } else if (event.type === "error") {
               setError(event.message ?? "오류가 발생했습니다.");
@@ -143,9 +153,26 @@ export default function ReportPage({ params }: ReportPageProps) {
           </p>
           <h1 className="text-3xl font-bold text-slate-900">{lawName}</h1>
           {!done && (
-            <div className="flex items-center gap-2 mt-3 text-sm text-slate-500">
-              <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
-              {currentSection ? `"${currentSection}" 분석 중...` : "분석 준비 중..."}
+            <div className="mt-3">
+              <div className="flex items-center gap-2 text-sm text-slate-500">
+                <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
+                {pendingSections.length > 0
+                  ? `${pendingSections.length}개 섹션 동시 분석 중 (완료: ${sections.length}/${sections.length + pendingSections.length})`
+                  : "분석 준비 중..."}
+              </div>
+              {pendingSections.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {pendingSections.map((p) => (
+                    <span
+                      key={p.id}
+                      className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-0.5 text-xs text-blue-700 border border-blue-100"
+                    >
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      {p.label}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -200,20 +227,26 @@ export default function ReportPage({ params }: ReportPageProps) {
                 </section>
               ))}
 
-              {/* Live stream preview */}
-              {!done && liveText && (
-                <div className="rounded-lg border border-dashed border-blue-200 bg-blue-50/50 p-6">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
-                    <span className="text-sm font-medium text-blue-700">
-                      {currentSection} 작성 중
-                    </span>
+              {/* Pending section placeholders */}
+              {!done &&
+                pendingSections.map((p) => (
+                  <div
+                    key={p.id}
+                    className="rounded-lg border border-dashed border-slate-200 bg-slate-50/50 p-6"
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
+                      <span className="text-sm font-medium text-slate-600">
+                        {p.label} 분석 중...
+                      </span>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="h-3 w-3/4 bg-slate-200 rounded animate-pulse" />
+                      <div className="h-3 w-full bg-slate-200 rounded animate-pulse" />
+                      <div className="h-3 w-1/2 bg-slate-200 rounded animate-pulse" />
+                    </div>
                   </div>
-                  <pre className="text-xs text-slate-600 whitespace-pre-wrap font-mono max-h-40 overflow-hidden">
-                    {liveText.slice(-800)}
-                  </pre>
-                </div>
-              )}
+                ))}
             </div>
           </div>
         )}

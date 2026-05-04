@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -13,7 +13,6 @@ interface SearchBarProps {
 export function SearchBar({ initialQuery = "" }: SearchBarProps) {
   const [query, setQuery] = useState(initialQuery);
   const router = useRouter();
-  const inputRef = useRef<HTMLInputElement>(null);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -27,7 +26,6 @@ export function SearchBar({ initialQuery = "" }: SearchBarProps) {
       <div className="relative flex-1">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
         <Input
-          ref={inputRef}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="법령명 또는 키워드를 입력하세요 (예: 개인정보보호법, 근로기준법)"
