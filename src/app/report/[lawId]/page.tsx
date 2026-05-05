@@ -40,7 +40,14 @@ export default function ReportPage({ params }: ReportPageProps) {
 
     setLawName(req.lawName);
 
+    // Reset all state for a clean run (guards against StrictMode double-invoke)
+    setSections([]);
+    setPendingSections([]);
+    setDone(false);
+    setError("");
+
     const controller = new AbortController();
+    let cancelled = false;
 
     async function startStream() {
       const res = await fetch("/api/analyze", {
@@ -61,7 +68,7 @@ export default function ReportPage({ params }: ReportPageProps) {
 
       while (true) {
         const { done: streamDone, value } = await reader.read();
-        if (streamDone) break;
+        if (streamDone || cancelled) break;
 
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split("\n");
@@ -72,23 +79,22 @@ export default function ReportPage({ params }: ReportPageProps) {
           try {
             const event: SSEEvent = JSON.parse(line.slice(6));
 
+            if (cancelled) break;
+
             if (event.type === "section_start") {
               const sectionConfig = req.sections.find(
                 (s) => s.id === event.sectionId
               );
-              setPendingSections((prev) => [
-                ...prev,
-                {
-                  id: event.sectionId!,
-                  label: sectionConfig?.label ?? event.sectionId!,
-                },
-              ]);
+              setPendingSections((prev) => {
+                if (prev.some((p) => p.id === event.sectionId)) return prev;
+                return [...prev, { id: event.sectionId!, label: sectionConfig?.label ?? event.sectionId! }];
+              });
             } else if (event.type === "section_end" && event.sectionId) {
               const sectionConfig = req.sections.find(
                 (s) => s.id === event.sectionId
               );
-              const sectionOrder = sectionConfig?.order ?? 0;
               setSections((prev) => {
+                if (prev.some((s) => s.sectionId === event.sectionId)) return prev;
                 const next = [
                   ...prev,
                   {
@@ -97,14 +103,12 @@ export default function ReportPage({ params }: ReportPageProps) {
                     blocks: event.blocks ?? [],
                   },
                 ];
-                // sort by configured order
                 return next.sort((a, b) => {
                   const oa = req.sections.find((s) => s.id === a.sectionId)?.order ?? 0;
                   const ob = req.sections.find((s) => s.id === b.sectionId)?.order ?? 0;
                   return oa - ob;
                 });
               });
-              void sectionOrder;
               setPendingSections((prev) => prev.filter((p) => p.id !== event.sectionId));
             } else if (event.type === "done") {
               setDone(true);
@@ -121,12 +125,15 @@ export default function ReportPage({ params }: ReportPageProps) {
     }
 
     startStream().catch((e: Error) => {
-      if (e.name !== "AbortError") {
+      if (!cancelled && e.name !== "AbortError") {
         setError(e.message ?? "스트리밍 오류가 발생했습니다.");
       }
     });
 
-    return () => controller.abort();
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
   }, [lawId, router]);
 
   return (
