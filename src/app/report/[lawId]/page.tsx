@@ -40,11 +40,14 @@ export default function ReportPage({ params }: ReportPageProps) {
 
     setLawName(req.lawName);
 
+    const controller = new AbortController();
+
     async function startStream() {
       const res = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(req),
+        signal: controller.signal,
       });
 
       if (!res.ok) {
@@ -117,9 +120,13 @@ export default function ReportPage({ params }: ReportPageProps) {
       }
     }
 
-    startStream().catch((e) => {
-      setError(e.message ?? "스트리밍 오류가 발생했습니다.");
+    startStream().catch((e: Error) => {
+      if (e.name !== "AbortError") {
+        setError(e.message ?? "스트리밍 오류가 발생했습니다.");
+      }
     });
+
+    return () => controller.abort();
   }, [lawId, router]);
 
   return (
