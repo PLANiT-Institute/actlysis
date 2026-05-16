@@ -1,5 +1,5 @@
-import type { AnalyzeRequest, SectionConfig, Block } from "./types";
-import { DEFAULT_SECTION_PROMPTS, BLOCK_SCHEMA } from "./constants";
+import type { AnalyzeRequest, SectionConfig, Block } from "../types";
+import { DEFAULT_SECTION_PROMPTS, BLOCK_SCHEMA } from "../constants";
 import { parseBlocks } from "./parse-blocks";
 
 const OLLAMA_BASE = process.env.OLLAMA_BASE_URL ?? "http://localhost:11434";
@@ -94,7 +94,7 @@ async function runOllamaForSection(
   return { sectionId: section.id, blocks };
 }
 
-export function streamAnalysisViaOllama(req: AnalyzeRequest): ReadableStream<Uint8Array> {
+export function streamAnalysis(req: AnalyzeRequest): ReadableStream<Uint8Array> {
   const enabledSections = req.sections
     .filter((s) => s.enabled)
     .sort((a, b) => a.order - b.order);

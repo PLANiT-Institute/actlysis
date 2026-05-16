@@ -1,4 +1,4 @@
-import type { Block } from "./types";
+import type { Block } from "../types";
 
 /**
  * Tries to parse a JSON fragment starting at line `start`.

@@ -1,7 +1,7 @@
 import { spawn } from "child_process";
-import { DEFAULT_SECTION_PROMPTS, BLOCK_SCHEMA } from "./constants";
+import { DEFAULT_SECTION_PROMPTS, BLOCK_SCHEMA } from "../constants";
 import { parseBlocks } from "./parse-blocks";
-import type { AnalyzeRequest, SectionConfig, Block } from "./types";
+import type { AnalyzeRequest, SectionConfig, Block } from "../types";
 
 function buildSectionPrompt(req: AnalyzeRequest, section: SectionConfig): string {
   const precedentSummary =
@@ -87,7 +87,7 @@ function runClaudeForSection(req: AnalyzeRequest, section: SectionConfig): Promi
   });
 }
 
-export function streamAnalysisViaClaude(req: AnalyzeRequest): ReadableStream<Uint8Array> {
+export function streamAnalysis(req: AnalyzeRequest): ReadableStream<Uint8Array> {
   const enabledSections = req.sections
     .filter((s) => s.enabled)
     .sort((a, b) => a.order - b.order);

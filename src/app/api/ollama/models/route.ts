@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { listOllamaModels } from "@/lib/ollama";
+import { listOllamaModels } from "@/lib/providers/ollama";
 
 export async function GET() {
   try {
