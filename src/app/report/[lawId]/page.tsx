@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Header } from "@/components/layout/Header";
 import { SectionRenderer } from "@/components/report/SectionRenderer";
-import { Printer, ArrowLeft, Loader2 } from "lucide-react";
+import { Printer, ArrowLeft, Loader2, TriangleAlert, Scale } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import type { AnalyzeRequest, AnalysisSection, SSEEvent } from "@/lib/types";
@@ -21,6 +21,8 @@ export default function ReportPage({ params }: ReportPageProps) {
   const [done, setDone] = useState(false);
   const [error, setError] = useState("");
   const [lawName, setLawName] = useState("");
+  const [modelLabel, setModelLabel] = useState("");
+  const [generatedAt, setGeneratedAt] = useState("");
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
   const streamStarted = useRef(false);
 
@@ -36,6 +38,7 @@ export default function ReportPage({ params }: ReportPageProps) {
     catch { router.replace(`/analyze/${lawId}`); return; }
 
     setLawName(req.lawName);
+    setModelLabel(`${req.providerConfig.name} · ${req.model}`);
 
     async function startStream() {
       const res = await fetch("/api/analyze", {
@@ -87,6 +90,10 @@ export default function ReportPage({ params }: ReportPageProps) {
             } else if (event.type === "done") {
               setDone(true);
               setPendingSections([]);
+              setGeneratedAt(new Date().toLocaleString("ko-KR", {
+                year: "numeric", month: "long", day: "numeric",
+                hour: "2-digit", minute: "2-digit",
+              }));
               sessionStorage.removeItem("analyzeRequest");
             } else if (event.type === "error") {
               setError(event.message ?? "오류가 발생했습니다.");
@@ -118,15 +125,21 @@ export default function ReportPage({ params }: ReportPageProps) {
             설정으로 돌아가기
           </Link>
           {done && (
-            <Button variant="outline" size="sm" onClick={() => window.print()}>
-              <Printer className="h-4 w-4 mr-1" />
-              인쇄 / 저장
+            <Button onClick={() => window.print()} className="gap-2">
+              <Printer className="h-4 w-4" />
+              인쇄 / PDF 저장
             </Button>
           )}
         </div>
 
         {/* Report Header */}
         <div className="mb-8">
+          {/* Print-only branding line */}
+          <div className="hidden print:flex items-center gap-1.5 mb-4 text-slate-400 text-xs">
+            <Scale className="h-3.5 w-3.5 text-blue-600" />
+            <span className="text-blue-600 font-semibold">Actlysis</span>
+            <span>by PLANiT Institute · law.go.kr</span>
+          </div>
           <p className="text-xs text-blue-600 font-semibold uppercase tracking-wider mb-1">
             법령 분석 보고서
           </p>
@@ -226,6 +239,30 @@ export default function ReportPage({ params }: ReportPageProps) {
                     </div>
                   </div>
                 ))}
+
+              {/* AI Disclaimer — shown when all sections are done */}
+              {done && (
+                <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 space-y-3 print:border-slate-300 print:bg-white">
+                  <div className="flex items-center gap-2 text-amber-700">
+                    <TriangleAlert className="h-4 w-4 shrink-0" />
+                    <span className="font-semibold text-sm">AI 생성 보고서 — 법적 효력 없음</span>
+                  </div>
+                  <p className="text-xs text-amber-800 leading-relaxed print:text-slate-600">
+                    이 보고서는 <strong>Actlysis</strong>(PLANiT Institute)가 AI 모델을 이용해 자동 생성한 참고 자료입니다.
+                    AI의 특성상 내용이 부정확하거나 누락·왜곡될 수 있으며, 법적 판단이나 의사결정의 근거로 단독 사용할 수 없습니다.
+                    중요한 법적 사안은 반드시 자격을 갖춘 법률 전문가에게 확인하세요.
+                    법령 원문은 <a href="https://www.law.go.kr" target="_blank" rel="noreferrer" className="underline">law.go.kr</a>에서 확인할 수 있습니다.
+                  </p>
+                  <div className="flex flex-wrap gap-x-6 gap-y-1 text-[11px] text-amber-700 print:text-slate-500 pt-1 border-t border-amber-200 print:border-slate-200">
+                    <span className="flex items-center gap-1">
+                      <Scale className="h-3 w-3" />
+                      분석 대상: {lawName}
+                    </span>
+                    {modelLabel && <span>모델: {modelLabel}</span>}
+                    {generatedAt && <span>생성 일시: {generatedAt}</span>}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
