@@ -8,12 +8,34 @@ actlysis는 law.go.kr Open API로 법령 원문과 관련 판례를 가져온 �
 
 ---
 
+## 법제처 Open API 키 발급
+
+actlysis는 [국가법령정보 공동활용](https://www.law.go.kr/LSO/main.do) API를 사용합니다. 무료로 발급받을 수 있으며 절차는 다음과 같습니다.
+
+1. **회원가입** — [law.go.kr](https://www.law.go.kr) 에 접속해 우측 상단 **회원가입**을 클릭합니다.
+2. **로그인 후 마이페이지** — 로그인한 뒤 우측 상단 이름 → **마이페이지**로 이동합니다.
+3. **API 인증값 관리** — 마이페이지 좌측 메뉴에서 **API인증값 관리**를 선택합니다.
+4. **OC 값 확인** — 화면에 표시된 **OC(Open API 인증키)** 값을 복사합니다. 이 값이 `LAW_OC_KEY` 입니다.
+5. **서버 IP 등록** — 같은 화면에서 **IP 등록** 버튼을 클릭하고, API를 호출할 서버의 공인 IP를 추가합니다. 로컬에서 실행한다면 현재 PC의 공인 IP를 등록하세요.
+   ```bash
+   # 현재 공인 IP 확인
+   curl -s -4 ifconfig.me
+   ```
+   > ⚠️ 카페 Wi-Fi나 VPN 등 네트워크 환경이 바뀌면 IP가 달라지므로 재등록이 필요합니다. 변경 적용까지 약 5~10분이 소요됩니다.
+
+6. **`.env.local`에 입력**
+   ```bash
+   LAW_OC_KEY=발급받은_OC값
+   ```
+
+---
+
 ## 시작하기
 
 ### 사전 요구 사항
 
 - Node.js 18+
-- law.go.kr API 키 — [law.go.kr](https://www.law.go.kr) 회원가입 후 마이페이지 → API인증값에서 발급 (무료)
+- law.go.kr API 키 (위 [법제처 Open API 키 발급](#법제처-open-api-키-발급) 참고)
 - AI 백엔드 중 하나: **Ollama** (로컬, 권장) 또는 **Claude Code CLI**
 
 ### 설치 및 실행
