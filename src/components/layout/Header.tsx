@@ -1,6 +1,5 @@
 import Link from "next/link";
-import { Scale } from "lucide-react";
-import { ProviderManagerButton } from "@/components/settings/ProviderManagerButton";
+import { Scale, Settings } from "lucide-react";
 
 export function Header() {
   return (
@@ -10,7 +9,13 @@ export function Header() {
           <Scale className="h-5 w-5 text-blue-600" />
           <span className="text-lg">actlysis</span>
         </Link>
-        <ProviderManagerButton />
+        <Link
+          href="/settings"
+          className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800 transition-colors"
+        >
+          <Settings className="h-4 w-4" />
+          <span className="hidden sm:inline">설정</span>
+        </Link>
       </div>
     </header>
   );
