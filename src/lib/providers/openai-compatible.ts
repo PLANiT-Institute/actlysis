@@ -1,57 +1,85 @@
-import type { AnalyzeRequest, SectionConfig, Block } from "../types";
+import type { AnalyzeRequest, SectionConfig, Block, ProviderConfig } from "../types";
 import { parseBlocks } from "./parse-blocks";
 import { buildSectionPrompt } from "./prompt";
-
-const OLLAMA_BASE = process.env.OLLAMA_BASE_URL ?? "http://localhost:11434";
-
-export interface OllamaModel {
-  name: string;
-  size: number;
-  modified_at: string;
-}
-
-export async function listOllamaModels(): Promise<OllamaModel[]> {
-  const res = await fetch(`${OLLAMA_BASE}/api/tags`, { cache: "no-store" });
-  if (!res.ok) throw new Error("Ollama에 연결할 수 없습니다.");
-  const data = (await res.json()) as { models?: OllamaModel[] };
-  return data.models ?? [];
-}
 
 interface SectionResult {
   sectionId: string;
   blocks: Block[];
 }
 
-async function runOllamaForSection(
+interface OpenAIMessage {
+  role: "user" | "assistant" | "system";
+  content: string;
+}
+
+interface OpenAIChatResponse {
+  choices?: Array<{
+    message?: {
+      content?: string;
+    };
+  }>;
+  error?: {
+    message?: string;
+  };
+}
+
+async function runSectionViaOpenAI(
   req: AnalyzeRequest,
   section: SectionConfig,
-  model: string
+  config: ProviderConfig
 ): Promise<SectionResult> {
+  const baseUrl = config.baseUrl ?? "https://api.openai.com/v1";
   const prompt = buildSectionPrompt(req, section);
 
-  const res = await fetch(`${OLLAMA_BASE}/api/generate`, {
+  const messages: OpenAIMessage[] = [{ role: "user", content: prompt }];
+
+  const res = await fetch(`${baseUrl}/chat/completions`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ model, prompt, stream: false }),
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${config.apiKey ?? ""}`,
+    },
+    body: JSON.stringify({
+      model: req.model,
+      messages,
+      stream: false,
+    }),
   });
 
   if (!res.ok) {
-    throw new Error(`Ollama 오류 (${res.status}): ${res.statusText}`);
+    const errText = await res.text().catch(() => res.statusText);
+    throw new Error(`OpenAI-compatible API 오류 (${res.status}): ${errText}`);
   }
 
-  const data = (await res.json()) as { response?: string; error?: string };
-  if (data.error) throw new Error(`Ollama: ${data.error}`);
+  const data = (await res.json()) as OpenAIChatResponse;
 
-  const blocks = parseBlocks(data.response ?? "");
-  return { sectionId: section.id, blocks };
+  if (data.error?.message) {
+    throw new Error(`OpenAI-compatible API: ${data.error.message}`);
+  }
+
+  const content = data.choices?.[0]?.message?.content ?? "";
+  return { sectionId: section.id, blocks: parseBlocks(content) };
 }
 
+/**
+ * Streams law analysis results from any OpenAI-compatible HTTP endpoint.
+ *
+ * All enabled sections are dispatched in parallel (one HTTP request each).
+ * Results are streamed back as SSE events: section_start for all sections
+ * up front, then section_end as each finishes, followed by a final done event.
+ *
+ * Args:
+ *   req: Analyze request including providerConfig with baseUrl and apiKey.
+ *
+ * Returns:
+ *   ReadableStream emitting SSE-formatted Uint8Array chunks.
+ */
 export function streamAnalysis(req: AnalyzeRequest): ReadableStream<Uint8Array> {
+  const config = req.providerConfig;
   const enabledSections = req.sections
     .filter((s) => s.enabled)
     .sort((a, b) => a.order - b.order);
 
-  const model = req.model;
   const encoder = new TextEncoder();
 
   function sendEvent(data: Record<string, unknown>): Uint8Array {
@@ -66,7 +94,7 @@ export function streamAnalysis(req: AnalyzeRequest): ReadableStream<Uint8Array> 
         }
 
         const promises = enabledSections.map((section) =>
-          runOllamaForSection(req, section, model)
+          runSectionViaOpenAI(req, section, config)
             .then((result) => {
               controller.enqueue(
                 sendEvent({ type: "section_end", sectionId: result.sectionId, blocks: result.blocks })

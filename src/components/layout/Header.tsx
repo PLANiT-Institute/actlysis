@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Scale } from "lucide-react";
+import { ProviderManagerButton } from "@/components/settings/ProviderManagerButton";
 
 export function Header() {
   return (
@@ -9,6 +10,7 @@ export function Header() {
           <Scale className="h-5 w-5 text-blue-600" />
           <span className="text-lg">actlysis</span>
         </Link>
+        <ProviderManagerButton />
       </div>
     </header>
   );

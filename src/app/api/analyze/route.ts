@@ -10,8 +10,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "잘못된 요청입니다." }, { status: 400 });
   }
 
-  if (!body.lawContent || !body.sections || !body.model || !body.provider) {
-    return NextResponse.json({ error: "법령 데이터, 섹션, 프로바이더, 모델이 필요합니다." }, { status: 400 });
+  if (!body.lawContent || !body.sections || !body.model || !body.providerConfig) {
+    return NextResponse.json(
+      { error: "법령 데이터, 섹션, 프로바이더, 모델이 필요합니다." },
+      { status: 400 }
+    );
   }
 
   const stream = streamAnalysis(body);

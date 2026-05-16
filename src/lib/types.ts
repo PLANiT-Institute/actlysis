@@ -105,13 +105,24 @@ export interface AnalysisSection {
   blocks: Block[];
 }
 
+export type ProviderType = "ollama" | "claude-code" | "openai-compatible" | "anthropic";
+
+export interface ProviderConfig {
+  id: string;
+  name: string;
+  type: ProviderType;
+  baseUrl?: string;
+  apiKey?: string;
+  models: string[];
+}
+
 export interface AnalyzeRequest {
   lawId: string;
   lawName: string;
   lawContent: LawContent;
   precedents: PrecedentResult[];
   sections: SectionConfig[];
-  provider: "ollama" | "claude-code";
+  providerConfig: ProviderConfig;
   model: string;
 }
 
