@@ -57,11 +57,20 @@ export function MermaidDiagram({ block }: { block: MermaidBlock }) {
     );
   }
 
+  // Strip any background <rect> that Mermaid injects with a dark fill
+  const cleanSvg = svg.replace(
+    /(<rect[^>]*\bid="[^"]*background[^"]*"[^>]*>|<rect[^>]*style="[^"]*fill:\s*(?:#[0-9a-f]{6}|rgba?\([^)]+\))[^"]*"[^/]*)(?:\s*<\/rect>)?/gi,
+    ""
+  ).replace(
+    /<svg([^>]*)>/,
+    (m, attrs) => `<svg${attrs} style="background:white;">`
+  );
+
   return (
     <div
       ref={ref}
-      className="rounded-lg border border-slate-200 bg-white p-4 overflow-x-auto flex justify-center"
-      dangerouslySetInnerHTML={{ __html: svg }}
+      className="rounded-lg border border-slate-200 bg-white p-4 overflow-x-auto flex justify-center [&_svg]:max-w-full"
+      dangerouslySetInnerHTML={{ __html: cleanSvg }}
     />
   );
 }

@@ -37,10 +37,18 @@ export function buildSectionPrompt(req: AnalyzeRequest, section: SectionConfig):
 
   return `당신은 대한민국 법률 전문 분석가입니다. 아래 법령에 대한 "${section.label}" 섹션을 작성합니다.
 
-# 출력 형식 (반드시 준수)
-- 첫 줄: blocks JSON 배열 (한 줄, 압축된 JSON, 다른 텍스트 없이)
-- 둘째 줄부터: 마크다운 본문
-- 마지막에 ---END--- 표시
+# 출력 형식 (절대 준수)
+응답은 반드시 다음 단계 순서로만 구성합니다:
+1. **첫 줄**: 압축된 JSON 객체 한 줄만. 형식: {"blocks":[...]}
+   - 배열([...])로만 시작하면 안 됩니다. 반드시 객체({"blocks":[...]})여야 합니다.
+2. **이후**: 마크다운 본문 (선택)
+3. **마지막 줄**: ---END---
+
+예시 (이 구조를 정확히 따르세요):
+{"blocks":[{"type":"stats","items":[{"label":"총 조문 수","value":"51개"}]},{"type":"mermaid","code":"flowchart TD\n  A-->B"}]}
+## 제목
+본문 내용...
+---END---
 
 ${BLOCK_SCHEMA}
 
@@ -59,5 +67,5 @@ ${precedentSummary}
 # 작성 지시
 ${sectionPrompt}
 
-이제 위 형식에 따라 "${section.label}" 섹션을 작성하세요. 첫 줄에 {"blocks":[...]} JSON을 출력하고, 이어서 마크다운 본문을 쓰고, 마지막에 ---END--- 로 종료하세요.`;
+지금 바로 첫 줄에 {"blocks":[...]} JSON을 출력하세요 (다른 텍스트 없이). 그 다음 마크다운 본문, 마지막에 ---END---:`;
 }

@@ -28,6 +28,12 @@ actlysis는 law.go.kr Open API로 법령 원문과 관련 판례를 가져온 �
 
 ![분석 설정](docs/screenshots/03-analyze-setup.png)
 
+### 4단계 — 분석 결과 보고서
+
+분석이 완료되면 법령명, 목차(TOC), 통계 카드, Mermaid 다이어그램, 마크다운 본문 등이 구조화된 보고서로 렌더링됩니다. 아래는 Claude Code(Claude Haiku)로 **전자서명법**을 분석한 실제 결과입니다.
+
+![분석 결과 보고서](docs/screenshots/06-report-claude-code.png)
+
 ### 설정 — AI 프로바이더 관리
 
 헤더의 ⚙️ **설정** 버튼을 누르면 AI 프로바이더 관리 페이지로 이동합니다. Ollama와 Claude Code는 자동 감지되며, OpenAI · Groq · Together AI · Anthropic API 등 어떤 API든 직접 추가할 수 있습니다.

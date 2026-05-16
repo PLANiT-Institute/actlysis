@@ -51,6 +51,37 @@ export function parseBlocks(rawOutput: string): Block[] {
   while (i < lines.length) {
     const line = lines[i].trim();
 
+    if (line.startsWith("[")) {
+      // Try JSON array: [{"type":"..."},...] or [{"blocks":[...]}]
+      const result = tryParseJson(lines, i);
+      if (result && Array.isArray(result.value)) {
+        const arr = result.value as unknown[];
+        // Case A: array of block objects directly
+        const directBlocks = arr.filter(isBlock) as Block[];
+        if (directBlocks.length > 0) {
+          flushMarkdown();
+          blocks.push(...directBlocks);
+          i = result.end + 1;
+          continue;
+        }
+        // Case B: array containing a {"blocks":[...]} wrapper
+        let found = false;
+        for (const item of arr) {
+          if (item && typeof item === "object" && Array.isArray((item as Record<string, unknown>).blocks)) {
+            const inner = (item as { blocks: unknown[] }).blocks.filter(isBlock) as Block[];
+            if (inner.length > 0) {
+              flushMarkdown();
+              blocks.push(...inner);
+              i = result.end + 1;
+              found = true;
+              break;
+            }
+          }
+        }
+        if (found) continue;
+      }
+    }
+
     if (line.startsWith("{")) {
       // Try {"blocks":[...]} wrapper first
       if (line.includes('"blocks"')) {
