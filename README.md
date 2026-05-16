@@ -4,7 +4,39 @@
 
 ## 프로젝트 소개
 
-actlysis는 law.go.kr Open API로 법령 원문과 관련 판례를 가져온 뒤, 로컬 AI(Ollama) 또는 Claude Code CLI를 이용해 구조화된 분석 보고서를 만들어 줍니다. 보고서는 **법령 개요 · 주요 조문 요약 · 관련 판례 · 법률 용어 해설** 4개 섹션으로 구성되며, 각 섹션은 마크다운 본문, 통계 카드(stats), 비교 테이블(comparison table), Mermaid 다이어그램, 타임라인, 벌칙표 등 다양한 블록으로 렌더링됩니다.
+actlysis는 law.go.kr Open API로 법령 원문과 관련 판례를 가져온 뒤, 로컬 AI(Ollama) 또는 외부 AI API를 이용해 구조화된 분석 보고서를 만들어 줍니다. 보고서는 **법령 개요 · 주요 조문 요약 · 관련 판례 · 법률 용어 해설** 4개 섹션으로 구성되며, 각 섹션은 마크다운 본문, 통계 카드(stats), 비교 테이블(comparison table), Mermaid 다이어그램, 타임라인, 벌칙표 등 다양한 블록으로 렌더링됩니다.
+
+---
+
+## 화면 구성
+
+### 1단계 — 법령 검색
+
+키워드를 입력하면 law.go.kr에서 법령을 검색합니다. 자주 찾는 법령은 빠른 접근 태그로 바로 이동할 수 있습니다.
+
+![법령 검색 홈](docs/screenshots/01-search-home.png)
+
+### 2단계 — 검색 결과 선택
+
+검색 결과에서 분석할 법령을 클릭합니다. 법령 유형(법률·대통령령·부령 등), 소관부처, 시행일이 표시됩니다.
+
+![검색 결과](docs/screenshots/02-search-results.png)
+
+### 3단계 — AI 및 섹션 설정
+
+분석에 사용할 AI 모델을 선택하고, 원하는 섹션을 켜거나 끄고 드래그로 순서를 바꿉니다. 섹션별로 커스텀 프롬프트를 입력할 수도 있습니다.
+
+![분석 설정](docs/screenshots/03-analyze-setup.png)
+
+### 설정 — AI 프로바이더 관리
+
+헤더의 ⚙️ **설정** 버튼을 누르면 AI 프로바이더 관리 페이지로 이동합니다. Ollama와 Claude Code는 자동 감지되며, OpenAI · Groq · Together AI · Anthropic API 등 어떤 API든 직접 추가할 수 있습니다.
+
+![AI 설정](docs/screenshots/04-settings.png)
+
+프로바이더 이름, 유형(OpenAI 호환 / Anthropic API), Base URL, API 키, 모델 목록을 입력하면 분석 페이지에 즉시 나타납니다.
+
+![프로바이더 추가](docs/screenshots/05-settings-add-provider.png)
 
 ---
 
