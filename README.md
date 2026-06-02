@@ -76,7 +76,7 @@ actlysis는 [국가법령정보 공동활용](https://www.law.go.kr/LSO/main.do)
 - **law.go.kr API 키** (위 [법제처 Open API 키 발급](#법제처-open-api-키-발급) 참고)
 - AI 백엔드 중 하나: **Ollama** (로컬, 권장) 또는 **Claude Code CLI**
 
-### macOS 한 방 설치 (권장)
+### macOS — 한 방 설치
 
 `setup.command` 파일을 더블클릭하면 아래를 자동으로 처리합니다.
 
@@ -90,6 +90,13 @@ actlysis는 [국가법령정보 공동활용](https://www.law.go.kr/LSO/main.do)
 5. 브라우저 자동 오픈 (`http://localhost:3000`)
 
 > **Claude Code 로그인**은 Anthropic/Google 계정 인증이 필요하므로 스크립트가 터미널을 열어 안내합니다. 로그인 후 돌아와서 Enter를 누르면 앱이 실행됩니다.
+
+### Windows — 한 방 설치
+
+`setup.bat` 파일을 더블클릭하면 macOS와 동일한 순서로 설치·설정·실행을 처리합니다.
+
+> Windows에서 "보안 경고" 팝업이 뜨면 **실행** 또는 **허용**을 클릭하세요.  
+> 최초 실행 시 한국어가 깨져 보이면 cmd 창에서 `chcp 65001`을 먼저 실행하세요.
 
 ### 수동 설치
 
