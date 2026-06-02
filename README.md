@@ -72,14 +72,29 @@ actlysis는 [국가법령정보 공동활용](https://www.law.go.kr/LSO/main.do)
 
 ### 사전 요구 사항
 
-- Node.js 18+
-- law.go.kr API 키 (위 [법제처 Open API 키 발급](#법제처-open-api-키-발급) 참고)
+- **Node.js 18+** ([nodejs.org](https://nodejs.org))
+- **law.go.kr API 키** (위 [법제처 Open API 키 발급](#법제처-open-api-키-발급) 참고)
 - AI 백엔드 중 하나: **Ollama** (로컬, 권장) 또는 **Claude Code CLI**
 
-### 설치 및 실행
+### macOS 한 방 설치 (권장)
+
+`setup.command` 파일을 더블클릭하면 아래를 자동으로 처리합니다.
+
+1. Node.js 설치 여부 확인
+2. npm 의존성 설치 (`npm install`)
+3. law.go.kr API 키 입력 및 `.env.local` 생성
+4. AI 백엔드 선택:
+   - **A. Ollama** — Ollama 설치 안내 + 모델 다운로드
+   - **B. Claude Code** — CLI 설치 + 로그인 터미널 자동 열기
+   - **C. 둘 다**
+5. 브라우저 자동 오픈 (`http://localhost:3000`)
+
+> **Claude Code 로그인**은 Anthropic/Google 계정 인증이 필요하므로 스크립트가 터미널을 열어 안내합니다. 로그인 후 돌아와서 Enter를 누르면 앱이 실행됩니다.
+
+### 수동 설치
 
 ```bash
-git clone https://github.com/your-org/actlysis.git
+git clone https://github.com/PLANiT-Institute/actlysis.git
 cd actlysis
 npm install
 ```
@@ -99,9 +114,9 @@ npm run dev
 
 브라우저에서 `http://localhost:3000` 을 열면 됩니다.
 
-### macOS 간편 실행 (Finder에서 더블클릭)
+### 이후 실행
 
-`run.command` 파일을 더블클릭하면 됩니다. 최초 실행 시 API 키를 대화식으로 입력받고, Ollama가 꺼져 있으면 자동으로 시작하고, `node_modules`가 없으면 `npm install`까지 처리합니다. 이후에는 브라우저도 자동으로 열립니다.
+최초 설치 후에는 `run.command`를 더블클릭하면 됩니다. Ollama가 꺼져 있으면 자동으로 시작하고, 브라우저도 자동으로 열립니다.
 
 ---
 
